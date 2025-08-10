@@ -20,6 +20,7 @@ const addressRoutes = require("./routes/AddressRoute");
 // // const weatherRoutes = require("./routes/weather.routes");
 // // const mobileRoutes = require("./routes/mobilediscount.routes");
 
+
 app.use(express.json());
 app.use(cors());
 app.use(express.urlencoded({ extended: true })); // For form data
