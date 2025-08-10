@@ -57,51 +57,51 @@ exports.verifyOtp = async (req, res) => {
   try {
     const { sessionId, code, phone: phoneRaw } = req.body;
     if (!sessionId || !code || !phoneRaw) {
-      return res.status(400).json({
-        success: false,
-        message: "sessionId, code and phone are required",
-      });
+      return res.status(400).json({ success: false, message: "sessionId, code and phone are required" });
     }
 
     const phone = normalizePhone(phoneRaw);
 
+    // 1) Verify OTP with 2Factor
     const { data } = await axios.get(verifyOtpUrl(sessionId, code), { timeout: 10000 });
-    // Success: { Status: "Success", Details: "OTP Matched" }
     const ok = data && data.Status === "Success" && /matched/i.test(data.Details);
-    if (!ok) {
-      return res.status(400).json({ success: false, message: "Invalid OTP" });
-    }
+    if (!ok) return res.status(400).json({ success: false, message: "Invalid OTP" });
 
-    // Find or create user by phone
-    // Your model requires name (allowNull: false), so set a sensible default when creating
-    const [user, created] = await users.findOrCreate({
-      where: { phone },
-      defaults: {
-        name: "Guest",
+    // 2) Find existing or create new user
+    let user = await users.findOne({ where: { phone } });
+    let created = false;
+
+    if (!user) {
+      created = true;
+      // create with temp name (name NOT NULL) then rename to userXXX based on id
+      user = await users.create({
+        name: "user_tmp",
+        phone,
         email: null,
         photo: null,
         password: null,
         points: 0,
         status: "ACTIVE",
-      },
-    });
+      });
 
-    // Block banned users from logging in
-    if (user.status === "BANNED") {
-      return res.status(403).json({ success: false, message: "Account is banned" });
+      const width = Math.max(3, String(user.id).length);
+      await user.update({ name: `user${String(user.id).padStart(width, "0")}` });
+    } else {
+      if (user.status === "BANNED") {
+        return res.status(403).json({ success: false, message: "Account is banned" });
+      }
+      if (user.status === "INACTIVE") {
+        await user.update({ status: "ACTIVE" });
+      }
+      // normalize legacy names (e.g., "Guest") once
+      if (!/^user\d+$/i.test(user.name)) {
+        const width = Math.max(3, String(user.id).length);
+        await user.update({ name: `user${String(user.id).padStart(width, "0")}` });
+      }
     }
 
-    // If user is inactive, activate on successful OTP
-    if (user.status === "INACTIVE") {
-      await user.update({ status: "ACTIVE" });
-    }
-
-    // Mint JWT
-    const token = jwt.sign(
-      { uid: user.id, phone: user.phone },
-      JWT_SECRET,
-      { expiresIn: "24h" }
-    );
+    // 3) JWT
+    const token = jwt.sign({ uid: user.id, phone: user.phone }, JWT_SECRET, { expiresIn: "24h" });
 
     return res.status(200).json({
       success: true,
@@ -116,14 +116,10 @@ exports.verifyOtp = async (req, res) => {
         points: user.points,
         status: user.status,
       },
-      created, // true if we just created the user
+      created,
     });
   } catch (err) {
-    return res.status(500).json({
-      success: false,
-      message: "Failed to verify OTP",
-      error: err.message,
-    });
+    return res.status(500).json({ success: false, message: "Failed to verify OTP", error: err.message });
   }
 };
 
