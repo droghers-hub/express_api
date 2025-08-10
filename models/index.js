@@ -10,7 +10,7 @@ const sequelize = new Sequelize(config.database, config.username, config.passwor
  
 // Import models
 const _addresses = require("./addresses");
-const _Banners = require("./banners");
+const _banners = require("./banners");
 const _brands = require("./brands");
 const _categories = require("./categories");
 const _Contacts = require("./contacts");
@@ -38,7 +38,7 @@ const _VerificationCodes = require("./verificationCodes");
  
 // Initialize models
 const addresses = _addresses(sequelize, DataTypes);
-const Banners = _Banners(sequelize, DataTypes);
+const banners = _banners(sequelize, DataTypes);
 const brands = _brands(sequelize, DataTypes);
 const categories = _categories(sequelize, DataTypes);
 const Contacts = _Contacts(sequelize, DataTypes);
@@ -122,7 +122,7 @@ module.exports = {
   sequelize,
   Sequelize,
   addresses,
-  Banners,
+  banners,
   brands,
   categories,
   Contacts,
