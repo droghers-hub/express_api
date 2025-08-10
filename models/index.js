@@ -1,13 +1,13 @@
 const { Sequelize, DataTypes } = require("sequelize");
 const config = require("../config/config.json").development; // adjust if needed
-
+ 
 // Create sequelize instance
 const sequelize = new Sequelize(config.database, config.username, config.password, {
   host: config.host,
   dialect: config.dialect,
   port: config.port
 });
-
+ 
 // Import models
 const _Addresses = require("./addresses");
 const _Banners = require("./banners");
@@ -35,7 +35,7 @@ const _Roles = require("./roles");
 const _Searches = require("./searches");
 const _users = require("./users");
 const _VerificationCodes = require("./verificationCodes");
-
+ 
 // Initialize models
 const Addresses = _Addresses(sequelize, DataTypes);
 const Banners = _Banners(sequelize, DataTypes);
@@ -63,7 +63,7 @@ const Roles = _Roles(sequelize, DataTypes);
 const Searches = _Searches(sequelize, DataTypes);
 const users = _users(sequelize, DataTypes);
 const VerificationCodes = _VerificationCodes(sequelize, DataTypes);
-
+ 
 // Associations
 Permissions.belongsToMany(Roles, { as: 'role_id_roles', through: RoleHasPermissions, foreignKey: "permission_id", otherKey: "role_id" });
 Roles.belongsToMany(Permissions, { as: 'permission_id_permissions', through: RoleHasPermissions, foreignKey: "role_id", otherKey: "permission_id" });
@@ -109,7 +109,7 @@ Orders.belongsTo(users, { as: "user", foreignKey: "user_id" });
 users.hasMany(Orders, { as: "orders", foreignKey: "user_id" });
 Ratings.belongsTo(users, { as: "user", foreignKey: "user_id" });
 users.hasMany(Ratings, { as: "ratings", foreignKey: "user_id" });
-
+ 
 // Export
 module.exports = {
   sequelize,
