@@ -48,7 +48,11 @@ module.exports = function(sequelize, DataTypes) {
     sequelize,
     tableName: 'users',
     timestamps: true,
-    paranoid: true,
+    underscored: true,
+    createdAt: 'created_at',
+    updatedAt: 'updated_at',
+    paranoid: true,           // only if you have soft deletes
+    deletedAt: 'deleted_at',
     indexes: [
       {
         name: "PRIMARY",
