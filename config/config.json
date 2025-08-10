@@ -1,0 +1,24 @@
+{
+  "development": {
+    "username": "droghershub",
+    "password": "admin@123",
+    "database": "droghershub",
+    "host": "mysql-droghershub.mysql.database.azure.com",
+    "dialect": "mysql"
+  },
+  "test": {
+    "username": "droghershub",
+    "password": "admin@123",
+    "database": "droghershubtest",
+    "host": "127.0.0.1",
+    "dialect": "mysql"
+  },
+  "production": {
+     "username": "droghershub",
+    "password": "admin@123",
+    "database": "droghershubprod",
+    "host": "127.0.0.1",
+    "dialect": "mysql"
+  }
+}
+ 
