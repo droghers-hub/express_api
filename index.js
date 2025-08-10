@@ -5,7 +5,7 @@ const app = express();
 // const client = require('prom-client');
 
 const userRoutes = require("./routes/UserRoute");
-// // const productRoutes = require("./routes/product.routes");
+const productRoutes = require("./routes/ProductRoute");
 // // const cartItemRoutes = require("./routes/cart_item.routes");
 // // const favoritesRoutes = require("./routes/favorites.routes");
 const addressRoutes = require("./routes/AddressRoute");
@@ -32,7 +32,7 @@ app.get("/", (req, res) => {
 
 // // Route registrations
 app.use("/api", userRoutes);
-// app.use("/api/products", productRoutes);
+app.use("/api/products", productRoutes);
 // app.use("/api/cart", cartItemRoutes);
 // app.use("/api/favorites", favoritesRoutes);
 app.use("/api/address", addressRoutes);
