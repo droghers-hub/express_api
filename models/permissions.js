@@ -18,7 +18,7 @@ module.exports = function(sequelize, DataTypes) {
   }, {
     sequelize,
     tableName: 'permissions',
-    timestamps: true,
+    timestamps: false,
     indexes: [
       {
         name: "PRIMARY",

@@ -39,7 +39,7 @@ module.exports = function(sequelize, DataTypes) {
   }, {
     sequelize,
     tableName: 'notifications',
-    timestamps: true,
+    timestamps: false,
     paranoid: true,
     indexes: [
       {

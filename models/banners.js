@@ -36,7 +36,7 @@ module.exports = function(sequelize, DataTypes) {
   }, {
     sequelize,
     tableName: 'banners',
-    timestamps: true,
+    timestamps: false,
     paranoid: true,
     indexes: [
       {

@@ -13,7 +13,7 @@ module.exports = function(sequelize, DataTypes) {
   }, {
     sequelize,
     tableName: 'password_reset_tokens',
-    timestamps: true,
+    timestamps: false,
     indexes: [
       {
         name: "PRIMARY",

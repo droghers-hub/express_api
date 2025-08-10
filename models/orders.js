@@ -40,7 +40,7 @@ module.exports = function(sequelize, DataTypes) {
   }, {
     sequelize,
     tableName: 'orders',
-    timestamps: true,
+    timestamps: false,
     paranoid: true,
     indexes: [
       {

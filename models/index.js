@@ -9,7 +9,7 @@ const sequelize = new Sequelize(config.database, config.username, config.passwor
 });
 
 // Import models
-const _Addresses = require("./addresses");
+const _addresses = require("./addresses");
 const _Banners = require("./banners");
 const _Brands = require("./brands");
 const _Categories = require("./categories");
@@ -27,7 +27,7 @@ const _PasswordResetTokens = require("./passwordResetTokens");
 const _Payments = require("./payments");
 const _Permissions = require("./permissions");
 const _PersonalAccessTokens = require("./personalAccessTokens");
-const _Postcodes = require("./postcodes");
+const _postcodes = require("./postcodes");
 const _Products = require("./products");
 const _Ratings = require("./ratings");
 const _RoleHasPermissions = require("./roleHasPermissions");
@@ -37,7 +37,7 @@ const _users = require("./users");
 const _VerificationCodes = require("./verificationCodes");
 
 // Initialize models
-const Addresses = _Addresses(sequelize, DataTypes);
+const addresses = _addresses(sequelize, DataTypes);
 const Banners = _Banners(sequelize, DataTypes);
 const Brands = _Brands(sequelize, DataTypes);
 const Categories = _Categories(sequelize, DataTypes);
@@ -55,7 +55,7 @@ const PasswordResetTokens = _PasswordResetTokens(sequelize, DataTypes);
 const Payments = _Payments(sequelize, DataTypes);
 const Permissions = _Permissions(sequelize, DataTypes);
 const PersonalAccessTokens = _PersonalAccessTokens(sequelize, DataTypes);
-const Postcodes = _Postcodes(sequelize, DataTypes);
+const postcodes = _postcodes(sequelize, DataTypes);
 const Products = _Products(sequelize, DataTypes);
 const Ratings = _Ratings(sequelize, DataTypes);
 const RoleHasPermissions = _RoleHasPermissions(sequelize, DataTypes);
@@ -67,8 +67,8 @@ const VerificationCodes = _VerificationCodes(sequelize, DataTypes);
 // Associations
 Permissions.belongsToMany(Roles, { as: 'role_id_roles', through: RoleHasPermissions, foreignKey: "permission_id", otherKey: "role_id" });
 Roles.belongsToMany(Permissions, { as: 'permission_id_permissions', through: RoleHasPermissions, foreignKey: "role_id", otherKey: "permission_id" });
-Orders.belongsTo(Addresses, { as: "address", foreignKey: "address_id" });
-Addresses.hasMany(Orders, { as: "orders", foreignKey: "address_id" });
+Orders.belongsTo(addresses, { as: "address", foreignKey: "address_id" });
+addresses.hasMany(Orders, { as: "orders", foreignKey: "address_id" });
 Products.belongsTo(Brands, { as: "brand", foreignKey: "brand_id" });
 Brands.hasMany(Products, { as: "products", foreignKey: "brand_id" });
 Products.belongsTo(Categories, { as: "category", foreignKey: "category_id" });
@@ -83,8 +83,8 @@ ModelHasPermissions.belongsTo(Permissions, { as: "permission", foreignKey: "perm
 Permissions.hasMany(ModelHasPermissions, { as: "model_has_permissions", foreignKey: "permission_id" });
 RoleHasPermissions.belongsTo(Permissions, { as: "permission", foreignKey: "permission_id" });
 Permissions.hasMany(RoleHasPermissions, { as: "role_has_permissions", foreignKey: "permission_id" });
-Addresses.belongsTo(Postcodes, { as: "postcode", foreignKey: "postcode_id" });
-Postcodes.hasMany(Addresses, { as: "addresses", foreignKey: "postcode_id" });
+addresses.belongsTo(postcodes, { as: "postcode", foreignKey: "postcode_id" });
+postcodes.hasMany(addresses, { as: "addresses", foreignKey: "postcode_id" });
 Favorites.belongsTo(Products, { as: "product", foreignKey: "product_id" });
 Products.hasMany(Favorites, { as: "favorites", foreignKey: "product_id" });
 Handcarts.belongsTo(Products, { as: "product", foreignKey: "product_id" });
@@ -97,8 +97,8 @@ ModelHasRoles.belongsTo(Roles, { as: "role", foreignKey: "role_id" });
 Roles.hasMany(ModelHasRoles, { as: "model_has_roles", foreignKey: "role_id" });
 RoleHasPermissions.belongsTo(Roles, { as: "role", foreignKey: "role_id" });
 Roles.hasMany(RoleHasPermissions, { as: "role_has_permissions", foreignKey: "role_id" });
-Addresses.belongsTo(users, { as: "user", foreignKey: "user_id" });
-users.hasMany(Addresses, { as: "addresses", foreignKey: "user_id" });
+addresses.belongsTo(users, { as: "user", foreignKey: "user_id" });
+users.hasMany(addresses, { as: "addresses", foreignKey: "user_id" });
 Favorites.belongsTo(users, { as: "user", foreignKey: "user_id" });
 users.hasMany(Favorites, { as: "favorites", foreignKey: "user_id" });
 Handcarts.belongsTo(users, { as: "user", foreignKey: "user_id" });
@@ -110,11 +110,14 @@ users.hasMany(Orders, { as: "orders", foreignKey: "user_id" });
 Ratings.belongsTo(users, { as: "user", foreignKey: "user_id" });
 users.hasMany(Ratings, { as: "ratings", foreignKey: "user_id" });
 
+addresses.belongsTo(users, { foreignKey: "user_id", as: "userAddress" });
+
+
 // Export
 module.exports = {
   sequelize,
   Sequelize,
-  Addresses,
+  addresses,
   Banners,
   Brands,
   Categories,
@@ -132,7 +135,7 @@ module.exports = {
   Payments,
   Permissions,
   PersonalAccessTokens,
-  Postcodes,
+  postcodes,
   Products,
   Ratings,
   RoleHasPermissions,

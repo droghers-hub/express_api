@@ -4,11 +4,11 @@ const app = express();
 const cors = require("cors");
 // const client = require('prom-client');
 
-const userRoutes = require("./routes/UserRoutes");
+const userRoutes = require("./routes/UserRoute");
 // // const productRoutes = require("./routes/product.routes");
 // // const cartItemRoutes = require("./routes/cart_item.routes");
 // // const favoritesRoutes = require("./routes/favorites.routes");
-// // const addressRoutes = require("./routes/address.routes");
+const addressRoutes = require("./routes/AddressRoute");
 // // const orderRoutes = require("./routes/order.routes");
 // // const categoryRoutes = require("./routes/category.routes");
 // // const priceroutes = require("./routes/totalprice.routes");
@@ -22,6 +22,7 @@ const userRoutes = require("./routes/UserRoutes");
 
 app.use(express.json());
 app.use(cors());
+app.use(express.urlencoded({ extended: true })); // For form data
 
 const PORT = process.env.PORT || 3000;
 
@@ -68,7 +69,7 @@ app.use("/api", userRoutes);
 // app.use("/api/products", productRoutes);
 // app.use("/api/cart", cartItemRoutes);
 // app.use("/api/favorites", favoritesRoutes);
-// app.use("/api/address", addressRoutes);
+app.use("/api/address", addressRoutes);
 // app.use("/api/order", orderRoutes);
 // app.use("/api/categories", categoryRoutes);
 // app.use("/api", priceroutes);

@@ -1,6 +1,6 @@
 const Sequelize = require('sequelize');
 module.exports = function(sequelize, DataTypes) {
-  return sequelize.define('Postcodes', {
+  return sequelize.define('postcodes', {
     id: {
       autoIncrement: true,
       type: DataTypes.BIGINT.UNSIGNED,
@@ -43,7 +43,7 @@ module.exports = function(sequelize, DataTypes) {
   }, {
     sequelize,
     tableName: 'postcodes',
-    timestamps: true,
+    timestamps: false,
     paranoid: true,
     indexes: [
       {
