@@ -32,9 +32,9 @@ app.get("/", (req, res) => {
 });
 
 // // Route registrations
-app.use("/auth", authRoutes);
+app.use("/api/auth", authRoutes);
 app.use("/api", userRoutes);
-app.use("/bancatbra", bancatbraRoutes);
+app.use("/api/bancatbra", bancatbraRoutes);
 app.use("/api/products", productRoutes);
 // app.use("/api/cart", cartItemRoutes);
 // app.use("/api/favorites", favoritesRoutes);
