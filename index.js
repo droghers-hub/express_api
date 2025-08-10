@@ -3,8 +3,9 @@ const express = require("express");
 const cors = require("cors");
 const app = express(); 
 // const client = require('prom-client');
-
+const authRoutes = require("./routes/auth.routes")
 const userRoutes = require("./routes/UserRoute");
+const bancatbraRoutes = require("./routes/bancatbra.routes");
 const productRoutes = require("./routes/ProductRoute");
 // // const cartItemRoutes = require("./routes/cart_item.routes");
 // // const favoritesRoutes = require("./routes/favorites.routes");
@@ -31,7 +32,9 @@ app.get("/", (req, res) => {
 });
 
 // // Route registrations
+app.use("/auth", authRoutes);
 app.use("/api", userRoutes);
+app.use("/bancatbra", bancatbraRoutes);
 app.use("/api/products", productRoutes);
 // app.use("/api/cart", cartItemRoutes);
 // app.use("/api/favorites", favoritesRoutes);
