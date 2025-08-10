@@ -29,3 +29,44 @@ exports.getProducts = async (req, res) => {
     res.status(500).json({ message: "Internal Server Error", error: error.message });
   }
 };
+
+
+// Hardcoded categories for seasonal and featured products
+const seasonalCategoryId = parseInt(process.env.SEASONAL_CATEGORY_ID, 10);
+const featuredCategoryId = parseInt(process.env.FEATURED_CATEGORY_ID, 10);
+
+exports.getProductsByHardcodedCategories = async (req, res) => {
+  try {
+    const categoryIds = [seasonalCategoryId, featuredCategoryId];
+
+    // Fetch categories info
+    const categoryData = await categories.findAll({
+      where: { id: categoryIds },
+      attributes: ["id", "name"],
+    });
+
+    // Fetch products filtered by those categories
+    const productsData = await products.findAll({
+      where: { category_id: categoryIds },
+      attributes: ["name", "photo", "retail_price", "current_price", "unit", "category_id"],
+      include: [
+        {
+          model: brands,
+          attributes: ["id", "name"],
+        },
+      ],
+    });
+
+    // Group products by category_id
+    const grouped = categoryData.map((cat) => ({
+      categoryId: cat.id,
+      categoryName: cat.name,
+      products: productsData.filter((p) => p.category_id === cat.id),
+    }));
+
+    res.status(200).json(grouped);
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ message: "Internal Server Error", error: error.message });
+  }
+};
