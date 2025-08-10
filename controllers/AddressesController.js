@@ -139,9 +139,12 @@ exports.remove = async (req, res) => {
       return res.status(404).json({ message: "Address not found" });
     }
 
-    await address.destroy();
-    res.status(200).json({ message: "Address deleted successfully" });
+    // Soft delete: mark status as INACTIVE instead of deleting
+    await address.update({ status: "INACTIVE" });
+
+    res.status(200).json({ message: "Address marked as inactive instead of deletion" });
   } catch (error) {
     res.status(500).json({ message: "Internal Server Error", error: error.message });
   }
 };
+
