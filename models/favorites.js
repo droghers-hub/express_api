@@ -31,7 +31,7 @@ module.exports = function(sequelize, DataTypes) {
   }, {
     sequelize,
     tableName: 'favorites',
-    timestamps: true,
+    timestamps: false,
     paranoid: true,
     indexes: [
       {

@@ -27,7 +27,7 @@ module.exports = function(sequelize, DataTypes) {
   }, {
     sequelize,
     tableName: 'categories',
-    timestamps: true,
+    timestamps: false,
     paranoid: true,
     indexes: [
       {

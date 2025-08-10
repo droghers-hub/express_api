@@ -39,7 +39,7 @@ module.exports = function(sequelize, DataTypes) {
   }, {
     sequelize,
     tableName: 'personal_access_tokens',
-    timestamps: true,
+    timestamps: false,
     indexes: [
       {
         name: "PRIMARY",
