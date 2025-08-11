@@ -23,10 +23,10 @@ exports.getProducts = async (req, res) => {
       ],
     });
 
-    res.status(200).json({ items });
+    res.status(200).json({ success:true,message:"Products fetched successfully", data: items });
   } catch (error) {
     console.error(error);
-    res.status(500).json({ message: "Internal Server Error", error: error.message });
+    res.status(500).json({ success:false,message: "Internal Server Error", error: error.message });
   }
 };
 
@@ -64,9 +64,9 @@ exports.getProductsByHardcodedCategories = async (req, res) => {
       products: productsData.filter((p) => p.category_id === cat.id),
     }));
 
-    res.status(200).json(grouped);
+    res.status(200).json({success:true,message:"Products fetched successfully",data:grouped});
   } catch (error) {
     console.error(error);
-    res.status(500).json({ message: "Internal Server Error", error: error.message });
+    res.status(500).json({success:false, message: "Internal Server Error", error: error.message });
   }
 };
