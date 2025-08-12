@@ -45,10 +45,12 @@ module.exports = function(sequelize, DataTypes) {
       defaultValue: "ACTIVE"
     }
   }, {
-    sequelize,
-    tableName: 'order_details',
-    timestamps: false,
-    paranoid: true,
+   timestamps: true,
+underscored: true,
+createdAt: 'created_at',
+updatedAt: 'updated_at',
+paranoid: true,
+deletedAt: 'deleted_at',
     indexes: [
       {
         name: "PRIMARY",
