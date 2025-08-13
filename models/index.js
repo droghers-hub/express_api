@@ -32,7 +32,7 @@ const _products = require("./products");
 const _Ratings = require("./ratings");
 const _RoleHasPermissions = require("./roleHasPermissions");
 const _Roles = require("./roles");
-const _Searches = require("./searches");
+const _searches = require("./searches");
 const _users = require("./users");
 const _VerificationCodes = require("./verificationCodes");
  
@@ -60,7 +60,7 @@ const products = _products(sequelize, DataTypes);
 const Ratings = _Ratings(sequelize, DataTypes);
 const RoleHasPermissions = _RoleHasPermissions(sequelize, DataTypes);
 const Roles = _Roles(sequelize, DataTypes);
-const Searches = _Searches(sequelize, DataTypes);
+const searches = _searches(sequelize, DataTypes);
 const users = _users(sequelize, DataTypes);
 const VerificationCodes = _VerificationCodes(sequelize, DataTypes);
  
@@ -144,7 +144,7 @@ module.exports = {
   Ratings,
   RoleHasPermissions,
   Roles,
-  Searches,
+  searches,
   users,
   VerificationCodes
 };

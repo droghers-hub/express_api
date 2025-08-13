@@ -17,7 +17,7 @@ const orderRoutes = require("./routes/order.routes");
 // // const medicineRoutes = require("./routes/medicine.routes");
 // // const imageRoutes = require('./routes/image.routes');
 // // const bannerRoutes = require("./routes/banners.routes");
-// // const searchRoutes = require("./routes/search.routes");
+const searchRoutes = require("./routes/SearchRoute");
 // // const weatherRoutes = require("./routes/weather.routes");
 // // const mobileRoutes = require("./routes/mobilediscount.routes");
 
@@ -47,7 +47,7 @@ app.use("/api/order", orderRoutes);
 // app.use("/api/medicine", medicineRoutes);
 // app.use('/api/images', imageRoutes);
 // app.use("/api/banners", bannerRoutes);
-// app.use("/api/search", searchRoutes);
+app.use("/api/search", searchRoutes);
 // app.use("/api/weather", weatherRoutes);
 // app.use("/api/mobile", mobileRoutes);
 
