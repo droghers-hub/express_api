@@ -11,9 +11,9 @@ router.post("/new", addressController.create);
 router.get("/user", addressController.list);
 
 // Update an address by ID
-router.put("/:id", addressController.update);
+router.put("/update", addressController.update);
 
 // Delete an address by ID
-router.delete("/:id", addressController.remove);
+router.delete("/delete", addressController.remove);
 
 module.exports = router;
