@@ -68,3 +68,51 @@ exports.getProductsByHardcodedCategories = async (req, res) => {
     res.status(500).json({ success: false, message: "Internal Server Error", error: error.message });
   }
 };
+
+exports.getProductById = async (req, res) => {
+  try {
+    const { product_id } = req.params;
+
+    if (!product_id) {
+      return res.status(400).json({ success: false, message: "Product ID is required" });
+    }
+
+    const product = await products.findByPk(product_id, {
+      attributes: [
+        "id",
+        "name",
+        "description",
+        "photo",
+        "variant",
+        "unit",
+        "purchase_price",
+        "retail_price",
+        "current_price",
+        "quantity",
+        "status",
+        "barcode"
+      ],
+      include: [
+        {
+          model: Brands,
+          as: "brand",
+          attributes: ["id", "name", "photo", "description"],
+        },
+        {
+          model: categories,
+          as: "category",
+          attributes: ["id", "name", "photo", "description"],
+        },
+      ],
+    });
+
+    if (!product) {
+      return res.status(404).json({ success: false, message: "Product not found" });
+    }
+
+    res.status(200).json({ success: true, message: "Product details fetched successfully", data: product });
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ success: false, message: "Internal Server Error", error: error.message });
+  }
+};
