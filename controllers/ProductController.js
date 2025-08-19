@@ -1,4 +1,4 @@
-const { products, brands, categories } = require("../models");
+const { products, Brands, categories } = require("../models");
 
 exports.getProducts = async (req, res) => {
   try {
@@ -10,17 +10,17 @@ exports.getProducts = async (req, res) => {
 
     const items = await products.findAll({
       where: whereClause,
-      attributes: ["name", "photo", "retail_price", "current_price", "unit"],
+      attributes: ["name","description", "photo", "retail_price", "current_price", "unit"],
       include: [
         {
-          model: brands,
+          model: Brands,
           as: "brand",
-          attributes: ["id", "name"],
+          attributes: ["id", "name","photo"],
         },
         {
           model: categories,
           as: "category",
-          attributes: ["id", "name"],
+          attributes: ["id", "name","photo"],
         },
       ],
     });
@@ -49,7 +49,7 @@ exports.getProductsByHardcodedCategories = async (req, res) => {
       attributes: ["name", "photo", "retail_price", "current_price", "unit", "category_id"],
       include: [
         {
-          model: brands,
+          model: Brands,
           as: "brand",
           attributes: ["id", "name"],
         },
