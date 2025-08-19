@@ -1,14 +1,12 @@
 const { Sequelize, DataTypes } = require("sequelize");
-const config = require("../config/config.json").development; // adjust if needed
+const config = require("../config/config.json").development;
  
-// Create sequelize instance
 const sequelize = new Sequelize(config.database, config.username, config.password, {
   host: config.host,
   dialect: config.dialect,
   port: config.port
 });
  
-// Import models
 const _addresses = require("./addresses");
 const _banners = require("./banners");
 const _brands = require("./brands");
@@ -36,10 +34,9 @@ const _searches = require("./searches");
 const _users = require("./users");
 const _VerificationCodes = require("./verificationCodes");
  
-// Initialize models
 const addresses = _addresses(sequelize, DataTypes);
 const banners = _banners(sequelize, DataTypes);
-const brands = _brands(sequelize, DataTypes);
+const Brands = _brands(sequelize, DataTypes);
 const categories = _categories(sequelize, DataTypes);
 const Contacts = _Contacts(sequelize, DataTypes);
 const FailedJobs = _FailedJobs(sequelize, DataTypes);
@@ -64,66 +61,78 @@ const searches = _searches(sequelize, DataTypes);
 const users = _users(sequelize, DataTypes);
 const VerificationCodes = _VerificationCodes(sequelize, DataTypes);
  
-// Associations
 Permissions.belongsToMany(Roles, { as: 'role_id_roles', through: RoleHasPermissions, foreignKey: "permission_id", otherKey: "role_id" });
 Roles.belongsToMany(Permissions, { as: 'permission_id_permissions', through: RoleHasPermissions, foreignKey: "role_id", otherKey: "permission_id" });
+
 Orders.belongsTo(addresses, { as: "address", foreignKey: "address_id" });
 addresses.hasMany(Orders, { as: "orders", foreignKey: "address_id" });
-products.belongsTo(brands, { as: "brand", foreignKey: "brand_id" });
-brands.hasMany(products, { as: "products", foreignKey: "brand_id" });
-products.belongsTo(categories, { as: "category", foreignKey: "category_id" });
-categories.hasMany(products, { as: "products", foreignKey: "category_id" });
-brands.belongsTo(Contacts, { as: "contact", foreignKey: "contact_id" });
-Contacts.hasMany(brands, { as: "brands", foreignKey: "contact_id" });
-OrderDetails.belongsTo(Orders, { as: "order", foreignKey: "order_id" });
-Orders.hasMany(OrderDetails, { as: "order_details", foreignKey: "order_id" });
-Payments.belongsTo(Orders, { as: "order", foreignKey: "order_id" });
-Orders.hasMany(Payments, { as: "payments", foreignKey: "order_id" });
-ModelHasPermissions.belongsTo(Permissions, { as: "permission", foreignKey: "permission_id" });
-Permissions.hasMany(ModelHasPermissions, { as: "model_has_permissions", foreignKey: "permission_id" });
-RoleHasPermissions.belongsTo(Permissions, { as: "permission", foreignKey: "permission_id" });
-Permissions.hasMany(RoleHasPermissions, { as: "role_has_permissions", foreignKey: "permission_id" });
-addresses.belongsTo(postcodes, { as: "postcode", foreignKey: "postcode_id" });
-postcodes.hasMany(addresses, { as: "addresses", foreignKey: "postcode_id" });
-Favorites.belongsTo(products, { as: "product", foreignKey: "product_id" });
-products.hasMany(Favorites, { as: "favorites", foreignKey: "product_id" });
-Handcarts.belongsTo(products, { as: "product", foreignKey: "product_id" });
-products.hasMany(Handcarts, { as: "handcarts", foreignKey: "product_id" });
-OrderDetails.belongsTo(products, { as: "product", foreignKey: "product_id" });
-products.hasMany(OrderDetails, { as: "order_details", foreignKey: "product_id" });
-Ratings.belongsTo(products, { as: "product", foreignKey: "product_id" });
-products.hasMany(Ratings, { as: "ratings", foreignKey: "product_id" });
-ModelHasRoles.belongsTo(Roles, { as: "role", foreignKey: "role_id" });
-Roles.hasMany(ModelHasRoles, { as: "model_has_roles", foreignKey: "role_id" });
-RoleHasPermissions.belongsTo(Roles, { as: "role", foreignKey: "role_id" });
-Roles.hasMany(RoleHasPermissions, { as: "role_has_permissions", foreignKey: "role_id" });
-addresses.belongsTo(users, { as: "user", foreignKey: "user_id" });
-users.hasMany(addresses, { as: "addresses", foreignKey: "user_id" });
-Favorites.belongsTo(users, { as: "user", foreignKey: "user_id" });
-users.hasMany(Favorites, { as: "favorites", foreignKey: "user_id" });
-Handcarts.belongsTo(users, { as: "user", foreignKey: "user_id" });
-users.hasMany(Handcarts, { as: "handcarts", foreignKey: "user_id" });
-Notifications.belongsTo(users, { as: "user", foreignKey: "user_id" });
-users.hasMany(Notifications, { as: "notifications", foreignKey: "user_id" });
+
 Orders.belongsTo(users, { as: "user", foreignKey: "user_id" });
 users.hasMany(Orders, { as: "orders", foreignKey: "user_id" });
+
+OrderDetails.belongsTo(Orders, { as: "order", foreignKey: "order_id" });
+Orders.hasMany(OrderDetails, { as: "order_details", foreignKey: "order_id" });
+
+OrderDetails.belongsTo(products, { as: "product", foreignKey: "product_id" });
+products.hasMany(OrderDetails, { as: "order_details", foreignKey: "product_id" });
+
+products.belongsTo(Brands, { as: "brand", foreignKey: "brand_id" });
+Brands.hasMany(products, { as: "products", foreignKey: "brand_id" });
+
+products.belongsTo(categories, { as: "category", foreignKey: "category_id" });
+categories.hasMany(products, { as: "products", foreignKey: "category_id" });
+
+addresses.belongsTo(postcodes, { as: "postcode", foreignKey: "postcode_id" });
+postcodes.hasMany(addresses, { as: "addresses", foreignKey: "postcode_id" });
+
+addresses.belongsTo(users, { as: "user", foreignKey: "user_id" });
+users.hasMany(addresses, { as: "addresses", foreignKey: "user_id" });
+
+Brands.belongsTo(Contacts, { as: "contact", foreignKey: "contact_id" });
+Contacts.hasMany(Brands, { as: "brands", foreignKey: "contact_id" });
+
+Payments.belongsTo(Orders, { as: "order", foreignKey: "order_id" });
+Orders.hasMany(Payments, { as: "payments", foreignKey: "order_id" });
+
+ModelHasPermissions.belongsTo(Permissions, { as: "permission", foreignKey: "permission_id" });
+Permissions.hasMany(ModelHasPermissions, { as: "model_has_permissions", foreignKey: "permission_id" });
+
+RoleHasPermissions.belongsTo(Permissions, { as: "permission", foreignKey: "permission_id" });
+Permissions.hasMany(RoleHasPermissions, { as: "role_has_permissions", foreignKey: "permission_id" });
+
+ModelHasRoles.belongsTo(Roles, { as: "role", foreignKey: "role_id" });
+Roles.hasMany(ModelHasRoles, { as: "model_has_roles", foreignKey: "role_id" });
+
+RoleHasPermissions.belongsTo(Roles, { as: "role", foreignKey: "role_id" });
+Roles.hasMany(RoleHasPermissions, { as: "role_has_permissions", foreignKey: "role_id" });
+
+Favorites.belongsTo(products, { as: "product", foreignKey: "product_id" });
+products.hasMany(Favorites, { as: "favorites", foreignKey: "product_id" });
+
+Favorites.belongsTo(users, { as: "user", foreignKey: "user_id" });
+users.hasMany(Favorites, { as: "favorites", foreignKey: "user_id" });
+
+Handcarts.belongsTo(products, { as: "product", foreignKey: "product_id" });
+products.hasMany(Handcarts, { as: "handcarts", foreignKey: "product_id" });
+
+Handcarts.belongsTo(users, { as: "user", foreignKey: "user_id" });
+users.hasMany(Handcarts, { as: "handcarts", foreignKey: "user_id" });
+
+Notifications.belongsTo(users, { as: "user", foreignKey: "user_id" });
+users.hasMany(Notifications, { as: "notifications", foreignKey: "user_id" });
+
+Ratings.belongsTo(products, { as: "product", foreignKey: "product_id" });
+products.hasMany(Ratings, { as: "ratings", foreignKey: "product_id" });
+
 Ratings.belongsTo(users, { as: "user", foreignKey: "user_id" });
 users.hasMany(Ratings, { as: "ratings", foreignKey: "user_id" });
 
-addresses.belongsTo(users, { foreignKey: "user_id", as: "userAddress" });
-
-products.belongsTo(brands, { foreignKey: "brand_id" });
-products.belongsTo(categories, { foreignKey: "category_id" });
-
-
-
-// Export
 module.exports = {
   sequelize,
   Sequelize,
   addresses,
   banners,
-  brands,
+  Brands,
   categories,
   Contacts,
   FailedJobs,
