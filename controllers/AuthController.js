@@ -3,7 +3,11 @@ const jwt = require("jsonwebtoken");
 const { users } = require("../models");
 require("dotenv").config();
 
-const { TWOFACTOR_API_KEY, JWT_SECRET = "a3f4e32a2f28639ce75d24a3b7dcaa5a7b27becdd077c5f4ee6ea2af50b27b231aa8a89b2d7e10eb567bf375b3999941ec4b7d1809dbf387d41a36ad91d76109", REFRESH_SECRET = "b4g5f43b3g39750df86e35b4c8edd6b8c38cfedd168853g5ff7fb3bg61c38c342bb9b90c3e8f21fc678cg486c4aaa052fd5c8c2910edc3g8e5e247be03e87210" } = process.env;
+const {
+  TWOFACTOR_API_KEY,
+  JWT_SECRET = "a3f4e32a2f28639ce75d24a3b7dcaa5a7b27becdd077c5f4ee6ea2af50b27b231aa8a89b2d7e10eb567bf375b3999941ec4b7d1809dbf387d41a36ad91d76109",
+  REFRESH_SECRET = "b4g5f43b3g39750df86e35b4c8edd6b8c38cfedd168853g5ff7fb3bg61c38c342bb9b90c3e8f21fc678cg486c4aaa052fd5c8c2910edc3g8e5e247be03e87210",
+} = process.env;
 
 const normalizePhone = (raw) => {
   if (!raw) return null;
@@ -16,36 +20,36 @@ const normalizePhone = (raw) => {
 const generateUniqueUserOtp = async () => {
   const maxAttempts = 100;
   let attempts = 0;
-  
+
   while (attempts < maxAttempts) {
     const randomOtp = Math.floor(1000 + Math.random() * 9000);
-    
+
     const existingUser = await users.findOne({
-      where: { user_otp: randomOtp }
+      where: { user_otp: randomOtp },
     });
-    
+
     if (!existingUser) {
       return randomOtp;
     }
-    
+
     attempts++;
   }
-  
+
   const timestamp = Date.now();
   const fallbackOtp = parseInt(timestamp.toString().slice(-4));
-  
+
   return fallbackOtp < 1000 ? fallbackOtp + 1000 : fallbackOtp;
 };
 
 const generateTokens = (user) => {
   const payload = { uid: user.id, phone: user.phone };
-  
+
   const accessToken = jwt.sign(payload, JWT_SECRET, { expiresIn: "24h" });
   const refreshToken = jwt.sign(payload, REFRESH_SECRET, { expiresIn: "7d" });
-  
+
   return {
     accessToken: `Bearer ${accessToken}`,
-    refreshToken: `Bearer ${refreshToken}`
+    refreshToken: `Bearer ${refreshToken}`,
   };
 };
 
@@ -60,12 +64,19 @@ exports.sendOTP = async (req, res) => {
     const phoneRaw = req.body.phone;
     const phone = normalizePhone(phoneRaw);
     if (!phone) {
-      return res.status(400).json({ success: false, message: "phone is required" });
+      return res
+        .status(400)
+        .json({ success: false, message: "phone is required" });
     }
 
     const { data } = await axios.get(sendOtpUrl(phone), { timeout: 10000 });
     if (!data || data.Status !== "Success" || !data.Details) {
-      return res.status(500).json({ success: false, message: data?.Details || "Failed to send OTP" });
+      return res
+        .status(500)
+        .json({
+          success: false,
+          message: data?.Details || "Failed to send OTP",
+        });
     }
 
     return res.status(200).json({
@@ -86,23 +97,32 @@ exports.verifyOtp = async (req, res) => {
   try {
     const { sessionId, code, phone: phoneRaw } = req.body;
     if (!sessionId || !code || !phoneRaw) {
-      return res.status(400).json({ success: false, message: "sessionId, code and phone are required" });
+      return res
+        .status(400)
+        .json({
+          success: false,
+          message: "sessionId, code and phone are required",
+        });
     }
 
     const phone = normalizePhone(phoneRaw);
 
-    const { data } = await axios.get(verifyOtpUrl(sessionId, code), { timeout: 10000 });
-    const ok = data && data.Status === "Success" && /matched/i.test(data.Details);
-    if (!ok) return res.status(400).json({ success: false, message: "Invalid OTP" });
+    const { data } = await axios.get(verifyOtpUrl(sessionId, code), {
+      timeout: 10000,
+    });
+    const ok =
+      data && data.Status === "Success" && /matched/i.test(data.Details);
+    if (!ok)
+      return res.status(400).json({ success: false, message: "Invalid OTP" });
 
     let user = await users.findOne({ where: { phone } });
     let created = false;
 
     if (!user) {
       created = true;
-      
+
       const uniqueUserOtp = await generateUniqueUserOtp();
-      
+
       user = await users.create({
         name: "user_tmp",
         phone,
@@ -115,18 +135,24 @@ exports.verifyOtp = async (req, res) => {
       });
 
       const width = Math.max(3, String(user.id).length);
-      await user.update({ name: `user${String(user.id).padStart(width, "0")}` });
+      await user.update({
+        name: `user${String(user.id).padStart(width, "0")}`,
+      });
     } else {
       if (user.status === "BANNED") {
-        return res.status(403).json({ success: false, message: "Account is banned" });
+        return res
+          .status(403)
+          .json({ success: false, message: "Account is banned" });
       }
       if (user.status === "INACTIVE") {
         await user.update({ status: "ACTIVE" });
       }
-      
+
       if (!/^user\d+$/i.test(user.name)) {
         const width = Math.max(3, String(user.id).length);
-        await user.update({ name: `user${String(user.id).padStart(width, "0")}` });
+        await user.update({
+          name: `user${String(user.id).padStart(width, "0")}`,
+        });
       }
     }
 
@@ -150,34 +176,50 @@ exports.verifyOtp = async (req, res) => {
       created,
     });
   } catch (err) {
-    return res.status(500).json({ success: false, message: "Failed to verify OTP", error: err.message });
+    return res
+      .status(500)
+      .json({
+        success: false,
+        message: "Failed to verify OTP",
+        error: err.message,
+      });
   }
 };
 
 exports.refreshToken = async (req, res) => {
   try {
     const { refreshToken } = req.body;
-    
+
     if (!refreshToken) {
-      return res.status(400).json({ success: false, message: "Refresh token is required" });
+      return res
+        .status(400)
+        .json({ success: false, message: "Refresh token is required" });
     }
 
-    const token = refreshToken.startsWith("Bearer ") ? refreshToken.slice(7) : refreshToken;
-    
+    const token = refreshToken.startsWith("Bearer ")
+      ? refreshToken.slice(7)
+      : refreshToken;
+
     const decoded = jwt.verify(token, REFRESH_SECRET);
-    
+
     const user = await users.findByPk(decoded.uid);
-    
+
     if (!user) {
-      return res.status(404).json({ success: false, message: "User not found" });
+      return res
+        .status(404)
+        .json({ success: false, message: "User not found" });
     }
-    
+
     if (user.status === "BANNED") {
-      return res.status(403).json({ success: false, message: "Account is banned" });
+      return res
+        .status(403)
+        .json({ success: false, message: "Account is banned" });
     }
-    
+
     if (user.status === "INACTIVE") {
-      return res.status(403).json({ success: false, message: "Account is inactive" });
+      return res
+        .status(403)
+        .json({ success: false, message: "Account is inactive" });
     }
 
     const tokens = generateTokens(user);
@@ -196,13 +238,22 @@ exports.refreshToken = async (req, res) => {
         points: user.points,
         status: user.status,
         user_otp: user.user_otp,
-      }
+        role: user.role,
+      },
     });
   } catch (err) {
-    if (err.name === 'JsonWebTokenError' || err.name === 'TokenExpiredError') {
-      return res.status(401).json({ success: false, message: "Invalid or expired refresh token" });
+    if (err.name === "JsonWebTokenError" || err.name === "TokenExpiredError") {
+      return res
+        .status(401)
+        .json({ success: false, message: "Invalid or expired refresh token" });
     }
-    return res.status(500).json({ success: false, message: "Failed to refresh token", error: err.message });
+    return res
+      .status(500)
+      .json({
+        success: false,
+        message: "Failed to refresh token",
+        error: err.message,
+      });
   }
 };
 
@@ -210,12 +261,15 @@ exports.authGuard = (req, res, next) => {
   try {
     const header = req.headers.authorization || "";
     const token = header.startsWith("Bearer ") ? header.slice(7) : null;
-    if (!token) return res.status(401).json({ success: false, message: "Missing token" });
+    if (!token)
+      return res.status(401).json({ success: false, message: "Missing token" });
 
     const payload = jwt.verify(token, JWT_SECRET);
     req.user = payload;
     next();
   } catch (err) {
-    return res.status(401).json({ success: false, message: "Invalid/expired token" });
+    return res
+      .status(401)
+      .json({ success: false, message: "Invalid/expired token" });
   }
 };
