@@ -9,6 +9,10 @@ const {
   REFRESH_SECRET = "b4g5f43b3g39750df86e35b4c8edd6b8c38cfedd168853g5ff7fb3bg61c38c342bb9b90c3e8f21fc678cg486c4aaa052fd5c8c2910edc3g8e5e247be03e87210",
 } = process.env;
 
+const DUMMY_PHONE = "+911234567890";
+const DUMMY_OTP = "636963";
+const DUMMY_SESSION_ID = "guest_session_123456";
+
 const normalizePhone = (raw) => {
   if (!raw) return null;
   const p = String(raw).trim();
@@ -59,6 +63,10 @@ const sendOtpUrl = (phone) =>
 const verifyOtpUrl = (sessionId, code) =>
   `https://2factor.in/API/V1/${TWOFACTOR_API_KEY}/SMS/VERIFY/${encodeURIComponent(sessionId)}/${encodeURIComponent(code)}`;
 
+const isDummyPhone = (phone) => {
+  return phone === DUMMY_PHONE || phone === "9999999999";
+};
+
 exports.sendOTP = async (req, res) => {
   try {
     const phoneRaw = req.body.phone;
@@ -67,6 +75,14 @@ exports.sendOTP = async (req, res) => {
       return res
         .status(400)
         .json({ success: false, message: "phone is required" });
+    }
+
+    if (isDummyPhone(phone)) {
+      return res.status(200).json({
+        success: true,
+        message: "OTP sent (Guest Mode)",
+        sessionId: DUMMY_SESSION_ID,
+      });
     }
 
     const { data } = await axios.get(sendOtpUrl(phone), { timeout: 10000 });
@@ -102,6 +118,64 @@ exports.verifyOtp = async (req, res) => {
     }
 
     const phone = normalizePhone(phoneRaw);
+
+    if (isDummyPhone(phone)) {
+      if (sessionId === DUMMY_SESSION_ID && code === DUMMY_OTP) {
+        let user = await users.findOne({ where: { phone: DUMMY_PHONE } });
+        let created = false;
+
+        if (!user) {
+          created = true;
+          const uniqueUserOtp = await generateUniqueUserOtp();
+
+          user = await users.create({
+            name: "Guest User",
+            phone: DUMMY_PHONE,
+            email: null,
+            photo: null,
+            password: null,
+            points: 0,
+            status: "ACTIVE",
+            user_otp: uniqueUserOtp,
+          });
+        } else {
+          if (user.status === "BANNED") {
+            return res
+              .status(403)
+              .json({ success: false, message: "Account is banned" });
+          }
+          if (user.status === "INACTIVE") {
+            await user.update({ status: "ACTIVE" });
+          }
+        }
+
+        const tokens = generateTokens(user);
+
+        return res.status(200).json({
+          success: true,
+          message: "OTP verified (Guest Mode)",
+          token: tokens.accessToken,
+          refreshToken: tokens.refreshToken,
+          user: {
+            id: user.id,
+            name: user.name,
+            phone: user.phone,
+            email: user.email,
+            photo: user.photo,
+            points: user.points,
+            status: user.status,
+            user_otp: user.user_otp,
+          },
+          created,
+          isGuest: true,
+        });
+      } else {
+        return res.status(400).json({ 
+          success: false, 
+          message: "Invalid OTP for guest login" 
+        });
+      }
+    }
 
     const { data } = await axios.get(verifyOtpUrl(sessionId, code), {
       timeout: 10000,
@@ -170,6 +244,7 @@ exports.verifyOtp = async (req, res) => {
         user_otp: user.user_otp,
       },
       created,
+      isGuest: false,
     });
   } catch (err) {
     return res.status(500).json({
@@ -234,6 +309,7 @@ exports.refreshToken = async (req, res) => {
         user_otp: user.user_otp,
         role: user.role,
       },
+      isGuest: isDummyPhone(user.phone),
     });
   } catch (err) {
     if (err.name === "JsonWebTokenError" || err.name === "TokenExpiredError") {
@@ -266,7 +342,6 @@ exports.authGuard = (req, res, next) => {
   }
 };
 
-// This is for the updating the phone number of the user
 exports.sendOtpForPhoneUpdate = async (req, res) => {
   try {
     const { newPhone } = req.body;
@@ -280,6 +355,13 @@ exports.sendOtpForPhoneUpdate = async (req, res) => {
     }
 
     const normalizedPhone = normalizePhone(newPhone);
+
+    if (isDummyPhone(normalizedPhone)) {
+      return res.status(400).json({
+        success: false,
+        message: "Cannot update to guest phone number",
+      });
+    }
 
     const existingUser = await users.findOne({
       where: {
@@ -320,8 +402,6 @@ exports.sendOtpForPhoneUpdate = async (req, res) => {
   }
 };
 
-
-//well, this will verify the otp and update the phone number of the user.
 exports.verifyOtpAndUpdatePhone = async (req, res) => {
   try {
     const { newPhone, otp, sessionId } = req.body;
@@ -335,6 +415,13 @@ exports.verifyOtpAndUpdatePhone = async (req, res) => {
     }
 
     const normalizedPhone = normalizePhone(newPhone);
+
+    if (isDummyPhone(normalizedPhone)) {
+      return res.status(400).json({
+        success: false,
+        message: "Cannot update to guest phone number",
+      });
+    }
 
     const { data } = await axios.get(verifyOtpUrl(sessionId, otp), {
       timeout: 10000,
@@ -400,6 +487,60 @@ exports.verifyOtpAndUpdatePhone = async (req, res) => {
     return res.status(500).json({
       success: false,
       message: "Failed to update phone number",
+      error: err.message,
+    });
+  }
+};
+
+exports.guestLogin = async (req, res) => {
+  try {
+    let user = await users.findOne({ where: { phone: DUMMY_PHONE } });
+    let created = false;
+
+    if (!user) {
+      created = true;
+      const uniqueUserOtp = await generateUniqueUserOtp();
+
+      user = await users.create({
+        name: "Guest User",
+        phone: DUMMY_PHONE,
+        email: null,
+        photo: null,
+        password: null,
+        points: 0,
+        status: "ACTIVE",
+        user_otp: uniqueUserOtp,
+      });
+    } else {
+      if (user.status === "INACTIVE") {
+        await user.update({ status: "ACTIVE" });
+      }
+    }
+
+    const tokens = generateTokens(user);
+
+    return res.status(200).json({
+      success: true,
+      message: "Guest login successful",
+      token: tokens.accessToken,
+      refreshToken: tokens.refreshToken,
+      user: {
+        id: user.id,
+        name: user.name,
+        phone: user.phone,
+        email: user.email,
+        photo: user.photo,
+        points: user.points,
+        status: user.status,
+        user_otp: user.user_otp,
+      },
+      created,
+      isGuest: true,
+    });
+  } catch (err) {
+    return res.status(500).json({
+      success: false,
+      message: "Failed to login as guest",
       error: err.message,
     });
   }
