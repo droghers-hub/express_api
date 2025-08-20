@@ -71,12 +71,10 @@ exports.sendOTP = async (req, res) => {
 
     const { data } = await axios.get(sendOtpUrl(phone), { timeout: 10000 });
     if (!data || data.Status !== "Success" || !data.Details) {
-      return res
-        .status(500)
-        .json({
-          success: false,
-          message: data?.Details || "Failed to send OTP",
-        });
+      return res.status(500).json({
+        success: false,
+        message: data?.Details || "Failed to send OTP",
+      });
     }
 
     return res.status(200).json({
@@ -97,12 +95,10 @@ exports.verifyOtp = async (req, res) => {
   try {
     const { sessionId, code, phone: phoneRaw } = req.body;
     if (!sessionId || !code || !phoneRaw) {
-      return res
-        .status(400)
-        .json({
-          success: false,
-          message: "sessionId, code and phone are required",
-        });
+      return res.status(400).json({
+        success: false,
+        message: "sessionId, code and phone are required",
+      });
     }
 
     const phone = normalizePhone(phoneRaw);
@@ -176,13 +172,11 @@ exports.verifyOtp = async (req, res) => {
       created,
     });
   } catch (err) {
-    return res
-      .status(500)
-      .json({
-        success: false,
-        message: "Failed to verify OTP",
-        error: err.message,
-      });
+    return res.status(500).json({
+      success: false,
+      message: "Failed to verify OTP",
+      error: err.message,
+    });
   }
 };
 
@@ -247,13 +241,11 @@ exports.refreshToken = async (req, res) => {
         .status(401)
         .json({ success: false, message: "Invalid or expired refresh token" });
     }
-    return res
-      .status(500)
-      .json({
-        success: false,
-        message: "Failed to refresh token",
-        error: err.message,
-      });
+    return res.status(500).json({
+      success: false,
+      message: "Failed to refresh token",
+      error: err.message,
+    });
   }
 };
 
@@ -271,5 +263,144 @@ exports.authGuard = (req, res, next) => {
     return res
       .status(401)
       .json({ success: false, message: "Invalid/expired token" });
+  }
+};
+
+// This is for the updating the phone number of the user
+exports.sendOtpForPhoneUpdate = async (req, res) => {
+  try {
+    const { newPhone } = req.body;
+    const userId = req.user.uid;
+
+    if (!newPhone) {
+      return res.status(400).json({
+        success: false,
+        message: "New phone number is required",
+      });
+    }
+
+    const normalizedPhone = normalizePhone(newPhone);
+
+    const existingUser = await users.findOne({
+      where: {
+        phone: normalizedPhone,
+        id: { [require("sequelize").Op.ne]: userId },
+      },
+    });
+
+    if (existingUser) {
+      return res.status(409).json({
+        success: false,
+        message: "This phone number is already registered with another account",
+      });
+    }
+
+    const { data } = await axios.get(sendOtpUrl(normalizedPhone), {
+      timeout: 10000,
+    });
+
+    if (!data || data.Status !== "Success" || !data.Details) {
+      return res.status(500).json({
+        success: false,
+        message: data?.Details || "Failed to send OTP to new phone number",
+      });
+    }
+
+    return res.status(200).json({
+      success: true,
+      message: "OTP sent to new phone number",
+      sessionId: data.Details,
+    });
+  } catch (err) {
+    return res.status(500).json({
+      success: false,
+      message: "Failed to send OTP for phone update",
+      error: err.message,
+    });
+  }
+};
+
+
+//well, this will verify the otp and update the phone number of the user.
+exports.verifyOtpAndUpdatePhone = async (req, res) => {
+  try {
+    const { newPhone, otp, sessionId } = req.body;
+    const userId = req.user.uid;
+
+    if (!newPhone || !otp || !sessionId) {
+      return res.status(400).json({
+        success: false,
+        message: "New phone number, OTP, and session ID are required",
+      });
+    }
+
+    const normalizedPhone = normalizePhone(newPhone);
+
+    const { data } = await axios.get(verifyOtpUrl(sessionId, otp), {
+      timeout: 10000,
+    });
+
+    const isValidOtp =
+      data && data.Status === "Success" && /matched/i.test(data.Details);
+
+    if (!isValidOtp) {
+      return res.status(400).json({
+        success: false,
+        message: "Invalid OTP",
+      });
+    }
+
+    const existingUser = await users.findOne({
+      where: {
+        phone: normalizedPhone,
+        id: { [require("sequelize").Op.ne]: userId },
+      },
+    });
+
+    if (existingUser) {
+      return res.status(409).json({
+        success: false,
+        message: "This phone number is already registered with another account",
+      });
+    }
+
+    const user = await users.findByPk(userId);
+
+    if (!user) {
+      return res.status(404).json({
+        success: false,
+        message: "User not found",
+      });
+    }
+
+    const oldPhone = user.phone;
+
+    await user.update({ phone: normalizedPhone });
+
+    const tokens = generateTokens(user);
+
+    return res.status(200).json({
+      success: true,
+      message: "Phone number updated successfully",
+      token: tokens.accessToken,
+      refreshToken: tokens.refreshToken,
+      user: {
+        id: user.id,
+        name: user.name,
+        phone: user.phone,
+        email: user.email,
+        photo: user.photo,
+        points: user.points,
+        status: user.status,
+        user_otp: user.user_otp,
+      },
+      oldPhone: oldPhone,
+    });
+  } catch (err) {
+    return res.status(500).json({
+      success: false,
+      message: "Failed to update phone number",
+      error: err.message,
+    });
   }
 };
