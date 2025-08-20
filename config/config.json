@@ -2,7 +2,7 @@
   "development": {
     "username": "droghershub",
     "password": "admin@123",
-    "database": "droghershub",
+    "database": "droghershubdb",
     "host": "mysql-droghershub.mysql.database.azure.com",
     "dialect": "mysql"
   },

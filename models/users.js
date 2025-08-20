@@ -43,6 +43,11 @@ module.exports = function(sequelize, DataTypes) {
       type: DataTypes.ENUM('ACTIVE','INACTIVE','BANNED'),
       allowNull: false,
       defaultValue: "ACTIVE"
+    },
+    user_otp:{
+      type:DataTypes.INTEGER,
+      allowNull:true,
+      defaultValue:null
     }
   }, {
     sequelize,
