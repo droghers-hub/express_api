@@ -1,6 +1,6 @@
 const axios = require("axios");
 const jwt = require("jsonwebtoken");
-const { users } = require("../models");
+const { users, ModelHasRoles, Roles } = require("../models");
 require("dotenv").config();
 
 const {
@@ -43,6 +43,45 @@ const generateUniqueUserOtp = async () => {
   const fallbackOtp = parseInt(timestamp.toString().slice(-4));
 
   return fallbackOtp < 1000 ? fallbackOtp + 1000 : fallbackOtp;
+};
+
+const getUserRoles = async (userId) => {
+  try {
+    const userRoles = await ModelHasRoles.findAll({
+      where: {
+        model_id: userId,
+        model_type: 'App\\Models\\User'
+      },
+      include: [{
+        model: Roles,
+        as: 'role',
+        attributes: ['id', 'name', 'guard_name']
+      }]
+    });
+
+    return userRoles.map(userRole => ({
+      id: userRole.role.id,
+      name: userRole.role.name,
+    }));
+  } catch (error) {
+    console.error('Error fetching user roles:', error);
+    return [];
+  }
+};
+
+const formatUserResponse = async (user) => {
+  const roles = await getUserRoles(user.id);
+  return {
+    id: user.id,
+    name: user.name,
+    phone: user.phone,
+    email: user.email,
+    photo: user.photo,
+    points: user.points,
+    status: user.status,
+    user_otp: user.user_otp,
+    role: roles.length > 0 ? roles[0].name : null
+  };
 };
 
 const generateTokens = (user) => {
@@ -138,6 +177,12 @@ exports.verifyOtp = async (req, res) => {
             status: "ACTIVE",
             user_otp: uniqueUserOtp,
           });
+
+          await ModelHasRoles.create({
+            role_id: 4,
+            model_type: 'App\\Models\\User',
+            model_id: user.id
+          });
         } else {
           if (user.status === "BANNED") {
             return res
@@ -150,22 +195,14 @@ exports.verifyOtp = async (req, res) => {
         }
 
         const tokens = generateTokens(user);
+        const userResponse = await formatUserResponse(user);
 
         return res.status(200).json({
           success: true,
           message: "OTP verified (Guest Mode)",
           token: tokens.accessToken,
           refreshToken: tokens.refreshToken,
-          user: {
-            id: user.id,
-            name: user.name,
-            phone: user.phone,
-            email: user.email,
-            photo: user.photo,
-            points: user.points,
-            status: user.status,
-            user_otp: user.user_otp,
-          },
+          user: userResponse,
           created,
           isGuest: true,
         });
@@ -208,6 +245,12 @@ exports.verifyOtp = async (req, res) => {
       await user.update({
         name: `user${String(user.id).padStart(width, "0")}`,
       });
+
+      await ModelHasRoles.create({
+        role_id: 4,
+        model_type: 'App\\Models\\User',
+        model_id: user.id
+      });
     } else {
       if (user.status === "BANNED") {
         return res
@@ -227,22 +270,14 @@ exports.verifyOtp = async (req, res) => {
     }
 
     const tokens = generateTokens(user);
+    const userResponse = await formatUserResponse(user);
 
     return res.status(200).json({
       success: true,
       message: "OTP verified",
       token: tokens.accessToken,
       refreshToken: tokens.refreshToken,
-      user: {
-        id: user.id,
-        name: user.name,
-        phone: user.phone,
-        email: user.email,
-        photo: user.photo,
-        points: user.points,
-        status: user.status,
-        user_otp: user.user_otp,
-      },
+      user: userResponse,
       created,
       isGuest: false,
     });
@@ -292,23 +327,14 @@ exports.refreshToken = async (req, res) => {
     }
 
     const tokens = generateTokens(user);
+    const userResponse = await formatUserResponse(user);
 
     return res.status(200).json({
       success: true,
       message: "Token refreshed successfully",
       token: tokens.accessToken,
       refreshToken: tokens.refreshToken,
-      user: {
-        id: user.id,
-        name: user.name,
-        phone: user.phone,
-        email: user.email,
-        photo: user.photo,
-        points: user.points,
-        status: user.status,
-        user_otp: user.user_otp,
-        role: user.role,
-      },
+      user: userResponse,
       isGuest: isDummyPhone(user.phone),
     });
   } catch (err) {
@@ -465,22 +491,14 @@ exports.verifyOtpAndUpdatePhone = async (req, res) => {
     await user.update({ phone: normalizedPhone });
 
     const tokens = generateTokens(user);
+    const userResponse = await formatUserResponse(user);
 
     return res.status(200).json({
       success: true,
       message: "Phone number updated successfully",
       token: tokens.accessToken,
       refreshToken: tokens.refreshToken,
-      user: {
-        id: user.id,
-        name: user.name,
-        phone: user.phone,
-        email: user.email,
-        photo: user.photo,
-        points: user.points,
-        status: user.status,
-        user_otp: user.user_otp,
-      },
+      user: userResponse,
       oldPhone: oldPhone,
     });
   } catch (err) {
@@ -518,22 +536,14 @@ exports.guestLogin = async (req, res) => {
     }
 
     const tokens = generateTokens(user);
+    const userResponse = await formatUserResponse(user);
 
     return res.status(200).json({
       success: true,
       message: "Guest login successful",
       token: tokens.accessToken,
       refreshToken: tokens.refreshToken,
-      user: {
-        id: user.id,
-        name: user.name,
-        phone: user.phone,
-        email: user.email,
-        photo: user.photo,
-        points: user.points,
-        status: user.status,
-        user_otp: user.user_otp,
-      },
+      user: userResponse,
       created,
       isGuest: true,
     });
