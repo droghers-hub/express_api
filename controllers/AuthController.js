@@ -1,6 +1,7 @@
 const axios = require("axios");
 const jwt = require("jsonwebtoken");
 const { users, ModelHasRoles, Roles } = require("../models");
+const bcrypt = require("bcrypt");
 require("dotenv").config();
 
 const {
@@ -551,6 +552,90 @@ exports.guestLogin = async (req, res) => {
     return res.status(500).json({
       success: false,
       message: "Failed to login as guest",
+      error: err.message,
+    });
+  }
+};
+
+
+exports.staffLogin = async (req, res) => {
+  try {
+    const { email, password } = req.body;
+
+    if (!email || !password) {
+      return res.status(400).json({
+        success: false,
+        message: "Email and password are required",
+      });
+    }
+
+    const user = await users.findOne({ 
+      where: { email },
+      include: [{
+        model: ModelHasRoles,
+        as: 'userRoles',
+        include: [{
+          model: Roles,
+          as: 'role',
+          where: { name: 'staff' }
+        }]
+      }]
+    });
+
+    if (!user) {
+      return res.status(401).json({
+        success: false,
+        message: "Invalid credentials",
+      });
+    }
+
+    if (user.status === "BANNED") {
+      return res.status(403).json({
+        success: false,
+        message: "Account is banned",
+      });
+    }
+
+    if (user.status === "INACTIVE") {
+      return res.status(403).json({
+        success: false,
+        message: "Account is inactive",
+      });
+    }
+
+    const isPasswordValid = await bcrypt.compare(password, user.password);
+
+    if (!isPasswordValid) {
+      return res.status(401).json({
+        success: false,
+        message: "Invalid credentials",
+      });
+    }
+
+    const hasStaffRole = user.userRoles && user.userRoles.length > 0;
+
+    if (!hasStaffRole) {
+      return res.status(403).json({
+        success: false,
+        message: "Access denied. Staff role required",
+      });
+    }
+
+    const tokens = generateTokens(user);
+    const userResponse = await formatUserResponse(user);
+
+    return res.status(200).json({
+      success: true,
+      message: "Staff login successful",
+      token: tokens.accessToken,
+      refreshToken: tokens.refreshToken,
+      user: userResponse,
+      isStaff: true,
+    });
+  } catch (err) {
+    return res.status(500).json({
+      success: false,
+      message: "Failed to login",
       error: err.message,
     });
   }
