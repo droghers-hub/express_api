@@ -51,21 +51,23 @@ const getUserRoles = async (userId) => {
     const userRoles = await ModelHasRoles.findAll({
       where: {
         model_id: userId,
-        model_type: 'App\\Models\\User'
+        model_type: "App\\Models\\User",
       },
-      include: [{
-        model: Roles,
-        as: 'role',
-        attributes: ['id', 'name', 'guard_name']
-      }]
+      include: [
+        {
+          model: Roles,
+          as: "role",
+          attributes: ["id", "name", "guard_name"],
+        },
+      ],
     });
 
-    return userRoles.map(userRole => ({
+    return userRoles.map((userRole) => ({
       id: userRole.role.id,
       name: userRole.role.name,
     }));
   } catch (error) {
-    console.error('Error fetching user roles:', error);
+    console.error("Error fetching user roles:", error);
     return [];
   }
 };
@@ -81,7 +83,7 @@ const formatUserResponse = async (user) => {
     points: user.points,
     status: user.status,
     user_otp: user.user_otp,
-    role: roles.length > 0 ? roles[0].name : null
+    role: roles.length > 0 ? roles[0].name : null,
   };
 };
 
@@ -181,8 +183,8 @@ exports.verifyOtp = async (req, res) => {
 
           await ModelHasRoles.create({
             role_id: 4,
-            model_type: 'App\\Models\\User',
-            model_id: user.id
+            model_type: "App\\Models\\User",
+            model_id: user.id,
           });
         } else {
           if (user.status === "BANNED") {
@@ -208,9 +210,9 @@ exports.verifyOtp = async (req, res) => {
           isGuest: true,
         });
       } else {
-        return res.status(400).json({ 
-          success: false, 
-          message: "Invalid OTP for guest login" 
+        return res.status(400).json({
+          success: false,
+          message: "Invalid OTP for guest login",
         });
       }
     }
@@ -249,8 +251,8 @@ exports.verifyOtp = async (req, res) => {
 
       await ModelHasRoles.create({
         role_id: 4,
-        model_type: 'App\\Models\\User',
-        model_id: user.id
+        model_type: "App\\Models\\User",
+        model_id: user.id,
       });
     } else {
       if (user.status === "BANNED") {
@@ -557,7 +559,6 @@ exports.guestLogin = async (req, res) => {
   }
 };
 
-
 exports.staffLogin = async (req, res) => {
   try {
     const { email, password } = req.body;
@@ -570,16 +571,7 @@ exports.staffLogin = async (req, res) => {
     }
 
     const user = await users.findOne({ 
-      where: { email },
-      include: [{
-        model: ModelHasRoles,
-        as: 'userRoles',
-        include: [{
-          model: Roles,
-          as: 'role',
-          where: { name: 'staff' }
-        }]
-      }]
+      where: { email }
     });
 
     if (!user) {
@@ -603,7 +595,21 @@ exports.staffLogin = async (req, res) => {
       });
     }
 
-    const isPasswordValid = await bcrypt.compare(password, user.password);
+    if (!user.password) {
+      return res.status(401).json({
+        success: false,
+        message: "Invalid credentials",
+      });
+    }
+
+    let isPasswordValid = false;
+    
+    if (user.password.startsWith('$2y$')) {
+      const bcryptPassword = user.password.replace('$2y$', '$2a$');
+      isPasswordValid = await bcrypt.compare(password, bcryptPassword);
+    } else {
+      isPasswordValid = await bcrypt.compare(password, user.password);
+    }
 
     if (!isPasswordValid) {
       return res.status(401).json({
@@ -612,7 +618,19 @@ exports.staffLogin = async (req, res) => {
       });
     }
 
-    const hasStaffRole = user.userRoles && user.userRoles.length > 0;
+    const userRoles = await ModelHasRoles.findAll({
+      where: {
+        model_id: user.id,
+        model_type: 'App\\Models\\User'
+      },
+      include: [{
+        model: Roles,
+        as: 'role',
+        where: { name: 'staff' }
+      }]
+    });
+
+    const hasStaffRole = userRoles.length > 0;
 
     if (!hasStaffRole) {
       return res.status(403).json({

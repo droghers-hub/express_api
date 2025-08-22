@@ -7,4 +7,6 @@ router.post("/refresh", auth.refreshToken);
 
 router.post("/user/send-otp", auth.authGuard, auth.sendOtpForPhoneUpdate);
 router.post("/user/verify-otp", auth.authGuard, auth.verifyOtpAndUpdatePhone);
+
+router.post("/delivery/login", auth.staffLogin);
 module.exports = router;
